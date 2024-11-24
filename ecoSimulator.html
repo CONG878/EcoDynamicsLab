@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ko-KR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoDynamicsSimulator</title>
+</head>
+
+<body>
+    <form action="" method="post">
+        <fieldset>
+            <legend>생물 종 이름</legend>
+            <label for="prey-name">피식자:</label>
+            <input id="prey-name" data-param="names.prey" type="text" value="토끼">
+            <label for="lower-predator-name">하위 포식자:</label>
+            <input id="lower-predator-name" data-param="names.lowerPredator" type="text" value="여우">
+            <label for="apex-predator-name">상위 포식자:</label>
+            <input id="apex-predator-name" data-param="names.apexPredator" type="text" value="늑대">
+        </fieldset>
+        <br>
+        <fieldset>
+            <legend>초기 개체수</legend>
+            <label for="x">피식자:</label>
+            <input id="x" data-param="populations.prey" type="number" value="1000">
+            <label for="y1">하위 포식자:</label>
+            <input id="y1" data-param="populations.lowerPredator" type="number" value="100">
+            <label for="y2">상위 포식자:</label>
+            <input id="y2" data-param="populations.apexPredator" type="number" value="10">
+        </fieldset>
+        <br>
+        <fieldset>
+            <legend>Step 정보</legend>
+            <label for="h">관측 간격:</label>
+            <input id="h" data-param="stepSize" type="number" value="0.23">
+            <label for="T">관찰 기간:</label>
+            <input id="T" data-param="tRange" type="number" value="24">
+        </fieldset>
+        <br>
+        <fieldset>
+            <legend>토끼 특성</legend>
+            <label for="r0">번식률:</label>
+            <input id="r0" data-param="preyTraits.reproductionRate" type="number" value="1.5">
+            <label for="K0">포화 개체수:</label>
+            <input id="K0" data-param="preyTraits.carryingCapacity" type="number" value="1300">
+        </fieldset>
+        <br>
+        <fieldset>
+            <legend>포식자 특성</legend>
+            <fieldset class="r">
+                <legend>번식률</legend>
+                <label for="r1">여우:</label>
+                <input id="r1" type="number" value="0.05">
+                <label for="r2">늑대:</label>
+                <input id="r2" type="number" value="0.025">
+            </fieldset>
+            <fieldset class="a">
+                <legend>포식 강도</legend>
+                <label for="a1">여우:</label>
+                <input id="a1" type="number" value="0.061">
+                <label for="a2">늑대:</label>
+                <input id="a2" type="number" value="0.0052">
+            </fieldset>
+            <fieldset class="b">
+                <legend>포식 효율</legend>
+                <label for="b1">여우:</label>
+                <input id="b1" type="number" value="0.4">
+                <label for="b2">늑대:</label>
+                <input id="b2" type="number" value="0.12">
+            </fieldset>
+            <fieldset class="c">
+                <legend>대체 식량 자원</legend>
+                <label for="c1">여우:</label>
+                <input id="c1" type="number" value="450">
+                <label for="c2">늑대:</label>
+                <input id="c2" type="number" value="750">
+            </fieldset>
+            <fieldset class="A">
+                <legend>포식자 간 공격성:</legend>
+                <div>
+                    <label for="a11">여우 → 여우</label>
+                    <input id="a11" type="number" value="0">
+                    <label for="a12">여우 → 늑대</label>
+                    <input id="a12" type="number" value="0">
+                </div>
+                <div>
+                    <label for="a21">늑대 → 여우</label>
+                    <input id="a21" type="number" value="0.0022">
+                    <label for="a22">늑대 → 늑대</label>
+                    <input id="a22" type="number" value="0.0025">
+                </div>
+            </fieldset>
+        </fieldset>
+        <br>
+        <fieldset>
+            <button type="reset">초기화</button>
+            <button type="button">Randomize</button>
+            <button type="button">Calculate!!</button>
+        </fieldset>
+        <br>
+        <!-- 실험 메타데이터 -->
+        <fieldset>
+            <label for="experiment-title">실험 제목:</label>
+            <input id="experiment-title" type="text">
+            <label for="experiment-description">실험 설명:</label>
+            <textarea id="experiment-description"></textarea>
+            <button type="submit">등록</button>
+        </fieldset>
+    </form>
+    <div class="차트 영역"></div>
+
+    <script>
+        // 상태 관리 객체
+        const state = {
+            names: { prey: "Rabbit", lowerPredator: "Fox", apexPredator: "Wolf" },
+            initial: { prey: 1000, lowerPredator: 100, apexPredator: 10 },
+            stepSize: 0.23,
+            tRange: 24,
+            // 기타 매개변수
+        };
+
+        // RK4 더미 함수
+        function rk4Dummy(model, initialState, tRange, stepSize) {
+            const tValues = [];
+            const yValues = { prey: [], lowerPredator: [], apexPredator: [] };
+            let t = 0;
+
+            for (let i = 0; i < tRange / stepSize; i++) {
+                tValues.push(t);
+                yValues.prey.push(initialState.prey + Math.sin(t)); // 더미 데이터
+                yValues.lowerPredator.push(initialState.lowerPredator + Math.cos(t));
+                yValues.apexPredator.push(initialState.apexPredator + Math.sin(t / 2));
+                t += stepSize;
+            }
+            return { t: tValues, y: yValues };
+        }
+
+        // 차트 렌더링 함수 (Chart.js 사용 가정)
+        function renderChart(t, y) {
+            const ctx = document.getElementById("chart-container").getContext("2d");
+            new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: t,
+                    datasets: [
+                        { label: state.names.prey, data: y.prey, borderColor: "blue" },
+                        { label: state.names.lowerPredator, data: y.lowerPredator, borderColor: "orange" },
+                        { label: state.names.apexPredator, data: y.apexPredator, borderColor: "red" },
+                    ],
+                },
+            });
+        }
+
+        // 상태 업데이트
+        function updateState() {
+            document.querySelectorAll("[data-param]").forEach((input) => {
+                const paramPath = input.dataset.param;
+                const value = input.type === "number" ? parseFloat(input.value) : input.value;
+
+                // 중첩 객체 갱신
+                const keys = paramPath.split(".");
+                let current = state;
+                for (let i = 0; i < keys.length - 1; i++) {
+                    current = current[keys[i]];
+                }
+                current[keys[keys.length - 1]] = value;
+            });
+        }
+
+        // Calculate 버튼 이벤트
+        document.getElementById("calculate-button").addEventListener("click", () => {
+            // 상태 갱신
+            updateState();
+
+            // 계산 및 차트 렌더링
+            const result = rk4Dummy(null, state.initial, state.tRange, state.stepSize);
+            renderChart(result.t, result.y);
+        });
+
+        // 초기화 버튼 이벤트 (선택적 구현)
+        document.getElementById("parameters-form").addEventListener("reset", () => {
+            location.reload(); // 페이지를 새로고침하여 초기 상태로 복구
+        });
+    </script>
+</body>
+
+</html>
