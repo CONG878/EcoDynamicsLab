@@ -1,0 +1,11 @@
+body {
+    display: flex;
+}
+
+form {
+    width: 40%;
+}
+
+output {
+    flex-grow: 1;
+}
