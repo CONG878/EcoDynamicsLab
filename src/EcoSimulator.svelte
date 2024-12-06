@@ -312,215 +312,439 @@
   /* 매개변수 제출 요청 종료 */
 </script>
 
-<h1>생태계 실험실</h1>
+<svelte:head>
+  <title>Eco Simulator</title>
+</svelte:head>
+
+<h1>생태계 시뮬레이터</h1>
 <h2>{experimentTitle}</h2>
-<section class="container">
+<section class="simulator-container">
   {#if dataLoaded}
-    <form on:reset|preventDefault={resetForm} on:submit={handleFormSubmit} novalidate>
-      <fieldset>
-        <legend>생물 종 이름</legend>
-        <label for="prey-name">피식자</label>
-        <input id="prey-name" type="text" bind:value={state.names.prey} />
-        <label for="lower-predator-name">하위 포식자</label>
-        <input
-          id="lower-predator-name"
-          type="text"
-          bind:value={state.names.LP}
-        />
-        <label for="apex-predator-name">상위 포식자</label>
-        <input
-          id="apex-predator-name"
-          type="text"
-          bind:value={state.names.AP}
-        />
-      </fieldset>
-
-      <fieldset>
-        <legend>초기 개체밀도</legend>
-        <label for="x">{state.names.prey}</label>
-        <input id="x" type="number" step="any" bind:value={populations.prey} />
-        <label for="y1">{state.names.LP}</label>
-        <input id="y1" type="number" step="any" bind:value={populations.LP} />
-        <label for="y2">{state.names.AP}</label>
-        <input id="y2" type="number" step="any" bind:value={populations.AP} />
-      </fieldset>
-
-      <fieldset>
-        <legend>관측 설정</legend>
-        <label for="h">관측 간격</label>
-        <input id="h" type="number" step="any" bind:value={state.stepSize} />
-        <label for="T">관측 기간</label>
-        <input id="T" type="number" step="any" bind:value={state.duration} />
-      </fieldset>
-
-      <fieldset>
-        <legend>피식자 특성</legend>
-        <label for="r0">번식률</label>
-        <input
-          id="r0"
-          bind:value={state.preyTraits.reproductionRate}
-          type="number"
-          step="any"
-        />
-        <label for="K0">포화 개체수</label>
-        <input
-          id="K0"
-          bind:value={state.preyTraits.carryingCapacity}
-          type="number"
-          step="any"
-        />
-      </fieldset>
-
-      <fieldset>
-        <legend>포식자 특성</legend>
-        <fieldset class="r">
-          <legend>번식률</legend>
-          <label for="r1">{state.names.LP}</label>
+    <form
+      on:reset|preventDefault={resetForm}
+      on:submit={handleFormSubmit}
+      novalidate
+    >
+      <section class="basic-info">
+        <fieldset>
+          <legend>생물 종 이름</legend>
+          <label for="prey-name">피식자</label>
+          <input id="prey-name" type="text" bind:value={state.names.prey} />
+          <label for="lower-predator-name">하위 포식자</label>
           <input
-            id="r1"
-            bind:value={state.predatorTraits.reproductionRate[0]}
-            type="number"
-            step="any"
+            id="lower-predator-name"
+            type="text"
+            bind:value={state.names.LP}
           />
-          <label for="r2">{state.names.AP}</label>
+          <label for="apex-predator-name">상위 포식자</label>
           <input
-            id="r2"
-            bind:value={state.predatorTraits.reproductionRate[1]}
-            type="number"
-            step="any"
+            id="apex-predator-name"
+            type="text"
+            bind:value={state.names.AP}
           />
         </fieldset>
-        <fieldset class="a">
-          <legend>포식 강도</legend>
-          <label for="a1">{state.names.LP}</label>
+
+        <fieldset>
+          <legend>초기 개체밀도</legend>
+          <label for="x">{state.names.prey}</label>
           <input
-            id="a1"
-            bind:value={state.predatorTraits.predationRate[0]}
+            id="x"
             type="number"
             step="any"
+            bind:value={populations.prey}
           />
-          <label for="a2">{state.names.AP}</label>
-          <input
-            id="a2"
-            bind:value={state.predatorTraits.predationRate[1]}
-            type="number"
-            step="any"
-          />
+          <label for="y1">{state.names.LP}</label>
+          <input id="y1" type="number" step="any" bind:value={populations.LP} />
+          <label for="y2">{state.names.AP}</label>
+          <input id="y2" type="number" step="any" bind:value={populations.AP} />
         </fieldset>
-        <fieldset class="b">
-          <legend>포식 효율</legend>
-          <label for="b1">{state.names.LP}</label>
-          <input
-            id="b1"
-            bind:value={state.predatorTraits.efficiency[0]}
-            type="number"
-            step="any"
-          />
-          <label for="b2">{state.names.AP}</label>
-          <input
-            id="b2"
-            bind:value={state.predatorTraits.efficiency[1]}
-            type="number"
-            step="any"
-          />
+
+        <fieldset>
+          <legend>관측 설정</legend>
+          <label for="h">관측 간격</label>
+          <input id="h" type="number" step="any" bind:value={state.stepSize} />
+          <label for="T">관측 기간</label>
+          <input id="T" type="number" step="any" bind:value={state.duration} />
         </fieldset>
-        <fieldset class="c">
-          <legend>대체 식량 자원</legend>
-          <label for="c1">{state.names.LP}</label>
-          <input
-            id="c1"
-            bind:value={state.predatorTraits.alternativeFood[0]}
-            type="number"
-            step="any"
-          />
-          <label for="c2">{state.names.AP}</label>
-          <input
-            id="c2"
-            bind:value={state.predatorTraits.alternativeFood[1]}
-            type="number"
-            step="any"
-          />
-        </fieldset>
-        <fieldset class="A">
-          <legend>포식자 간 공격성</legend>
-          <div>
-            <label for="a11">{state.names.LP} → {state.names.LP}</label>
-            <input
-              id="a11"
-              bind:value={state.aggressionRateMatrix["0"][0]}
-              type="number"
-              step="any"
-            />
-            <label for="a12">{state.names.LP} → {state.names.AP}</label>
-            <input
-              id="a12"
-              bind:value={state.aggressionRateMatrix["0"][1]}
-              type="number"
-              step="any"
-            />
+
+        <!-- 실험 메타데이터 -->
+        <fieldset class="metadata">
+          <div class="buttons">
+            <button type="reset" class="btn-secondary">초기화</button>
+            <button type="button" on:click={randomize} class="btn-secondary"
+              >Randomize</button
+            >
+            <button type="button" on:click={simulate} class="btn-primary"
+              >Simulate</button
+            >
           </div>
-          <div>
-            <label for="a21">{state.names.AP} → {state.names.LP}</label>
-            <input
-              id="a21"
-              bind:value={state.aggressionRateMatrix["1"][0]}
-              type="number"
-              step="any"
-            />
-            <label for="a22">{state.names.AP} → {state.names.AP}</label>
-            <input
-              id="a22"
-              bind:value={state.aggressionRateMatrix["1"][1]}
-              type="number"
-              step="any"
-            />
-          </div>
+          <a href="/LabBoard" use:link>다른 환경 보러 가기</a>
+
+          <label for="title">실험 제목</label>
+          <input id="title" bind:value={experimentMetadata.title} type="text" />
+          <label for="description">실험 설명</label>
+          <textarea id="description" bind:value={experimentMetadata.description}
+          ></textarea>
+          <button type="submit" class="btn-primary">등록</button>
         </fieldset>
-      </fieldset>
+      </section>
 
-      <!-- 실험 메타데이터 -->
-      <fieldset>
-        <button type="reset">초기화</button>
-        <button type="button" on:click={randomize}>Randomize</button>
-        <button type="button" on:click={simulate}>Simulate</button>
-        <a href="/LabBoard" use:link>다른 환경 보러 가기</a>
+      <section class="traits">
+        <fieldset>
+          <legend>피식자 특성</legend>
+          <label for="r0">번식률</label>
+          <input
+            id="r0"
+            bind:value={state.preyTraits.reproductionRate}
+            type="number"
+            step="any"
+          />
+          <label for="K0">포화 개체수</label>
+          <input
+            id="K0"
+            bind:value={state.preyTraits.carryingCapacity}
+            type="number"
+            step="any"
+          />
+        </fieldset>
 
-        <label for="title">실험 제목</label>
-        <input id="title" bind:value={experimentMetadata.title} type="text" />
-        <label for="description">실험 설명</label>
-        <textarea id="description" bind:value={experimentMetadata.description}
-        ></textarea>
-        <button type="submit">등록</button>
-      </fieldset>
+        <fieldset class="predator">
+          <legend>포식자 특성</legend>
+          <fieldset class="r">
+            <legend>번식률</legend>
+            <div class="input-group">
+              <label for="r1">{state.names.LP}</label>
+              <input
+                id="r1"
+                bind:value={state.predatorTraits.reproductionRate[0]}
+                type="number"
+                step="any"
+              />
+            </div>
+            <div class="input-group">
+              <label for="r2">{state.names.AP}</label>
+              <input
+                id="r2"
+                bind:value={state.predatorTraits.reproductionRate[1]}
+                type="number"
+                step="any"
+              />
+            </div>
+          </fieldset>
+          <fieldset class="a">
+            <legend>포식 강도</legend>
+            <div class="input-group">
+              <label for="a1">{state.names.LP}</label>
+              <input
+                id="a1"
+                bind:value={state.predatorTraits.predationRate[0]}
+                type="number"
+                step="any"
+              />
+            </div>
+            <div class="input-group">
+              <label for="a2">{state.names.AP}</label>
+              <input
+                id="a2"
+                bind:value={state.predatorTraits.predationRate[1]}
+                type="number"
+                step="any"
+              />
+            </div>
+          </fieldset>
+          <fieldset class="b">
+            <legend>포식 효율</legend>
+            <div class="input-group">
+              <label for="b1">{state.names.LP}</label>
+              <input
+                id="b1"
+                bind:value={state.predatorTraits.efficiency[0]}
+                type="number"
+                step="any"
+              />
+            </div>
+            <div class="input-group">
+              <label for="b2">{state.names.AP}</label>
+              <input
+                id="b2"
+                bind:value={state.predatorTraits.efficiency[1]}
+                type="number"
+                step="any"
+              />
+            </div>
+          </fieldset>
+          <fieldset class="c">
+            <legend>대체 식량 자원</legend>
+            <div class="input-group">
+              <label for="c1">{state.names.LP}</label>
+              <input
+                id="c1"
+                bind:value={state.predatorTraits.alternativeFood[0]}
+                type="number"
+                step="any"
+              />
+            </div>
+            <div class="input-group">
+              <label for="c2">{state.names.AP}</label>
+              <input
+                id="c2"
+                bind:value={state.predatorTraits.alternativeFood[1]}
+                type="number"
+                step="any"
+              />
+            </div>
+          </fieldset>
+          <fieldset class="A">
+            <legend>포식자 간 공격성</legend>
+            <div class="input-group">
+              <label for="a11">{state.names.LP} → {state.names.LP}</label>
+              <input
+                id="a11"
+                bind:value={state.aggressionRateMatrix["0"][0]}
+                type="number"
+                step="any"
+              />
+            </div>
+            <div class="input-group">
+              <label for="a12">{state.names.LP} → {state.names.AP}</label>
+              <input
+                id="a12"
+                bind:value={state.aggressionRateMatrix["0"][1]}
+                type="number"
+                step="any"
+              />
+            </div>
+            <div class="input-group">
+              <label for="a21">{state.names.AP} → {state.names.LP}</label>
+              <input
+                id="a21"
+                bind:value={state.aggressionRateMatrix["1"][0]}
+                type="number"
+                step="any"
+              />
+            </div>
+            <div class="input-group">
+              <label for="a22">{state.names.AP} → {state.names.AP}</label>
+              <input
+                id="a22"
+                bind:value={state.aggressionRateMatrix["1"][1]}
+                type="number"
+                step="any"
+              />
+            </div>
+          </fieldset>
+        </fieldset>
+      </section>
     </form>
   {:else}
-    <p>데이터를 로드하는 중...</p>
+    <p class="loading">데이터를 로드하는 중...</p>
   {/if}
 
   <output>
     <canvas id="ecosystemChart"></canvas>
-    <div class="grid-mode">
-      <label for="prey-axis">피식자 눈금</label>
-      <input
-        type="checkbox"
-        id="prey-axis"
-        bind:checked={yGridVisible}
-        on:change={toggleGrid}
-      />
-      <label for="predator-axis">포식자 눈금</label>
-      <input
-        type="checkbox"
-        id="predator-axis"
-        bind:checked={y1GridVisible}
-        on:change={toggleGrid}
-      />
-    </div>
-    <label for="ticks">단위 기간(개월)</label>
-    <input type="number" id="ticks" bind:value={xTicks} on:change={ticksSize}>
+    <section class="chart-controlls">
+      <div class="grid-mode">
+        <label for="prey-axis">피식자 눈금</label>
+        <input
+          type="checkbox"
+          id="prey-axis"
+          bind:checked={yGridVisible}
+          on:change={toggleGrid}
+        />
+        <label for="predator-axis">포식자 눈금</label>
+        <input
+          type="checkbox"
+          id="predator-axis"
+          bind:checked={y1GridVisible}
+          on:change={toggleGrid}
+        />
+      </div>
+      <div class="grid-mode">
+        <label for="ticks">단위 기간(개월)</label>
+        <input
+          type="number"
+          id="ticks"
+          bind:value={xTicks}
+          on:change={ticksSize}
+        />
+      </div>
+    </section>
   </output>
 </section>
 
 <style>
+  h1 {
+    font-size: 2.5rem;
+    color: var(--color-primary-dark);
+    margin-bottom: 0.5rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    color: var(--color-text-light);
+    margin-bottom: 2rem;
+  }
+
+  .simulator-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  form {
+    display: flex;
+    gap: 2rem;
+    flex-direction: column;
+  }
+
+  fieldset {
+    background-color: var(--color-background-alt);
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  legend {
+    font-size: 1.25rem;
+    color: var(--color-primary);
+    margin-bottom: 1rem;
+  }
+
+  label {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+
+  input,
+  textarea {
+    padding: 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.25rem;
+    font-size: 1rem;
+  }
+
+  button {
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    transition: background-color 0.2s ease-in-out;
+  }
+
+  .btn-primary {
+    background-color: var(--color-primary);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background-color: var(--color-primary-dark);
+  }
+
+  .btn-secondary {
+    background-color: var(--color-background);
+    color: var(--color-primary);
+    border: 1px solid var(--color-primary);
+  }
+
+  .btn-secondary:hover {
+    background-color: var(--color-secondary);
+  }
+
+  a {
+    color: var(--color-primary);
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  .buttons {
+    display: flex;
+    justify-content: space-between;
+    width: 303px;
+  }
+
+  .basic-info {
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  #title,
+  #description {
+    width: 100%;
+  }
+
+  button[type="submit"] {
+    display: block;
+  }
+
+  fieldset fieldset {
+    display: flex;
+    gap: 0.4rem;
+  }
+
+  fieldset fieldset.A {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-gap: 0.4rem;
+  }
+
+  .predator input {
+    width: 100%;
+  }
+
+  output {
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    width: 100%;
+  }
+
+  .chart-controlls {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin-top: 1rem;
+  }
+
+  .grid-mode {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .loading {
+    text-align: center;
+    font-size: 1.25rem;
+    color: var(--color-text-light);
+  }
+
+  /* Responsive styles */
+  @media (min-width: 640px) {
+    form {
+      flex-direction: row;
+    }
+  }
+
+  @media (min-width: 768px) {
+    h1 {
+      font-size: 3rem;
+    }
+
+    h2 {
+      font-size: 1.75rem;
+    }
+
+    fieldset {
+      padding: 2rem;
+    }
+  }
+
+  /* Remove default number input styling */
   input[type="number"]::-webkit-inner-spin-button,
   input[type="number"]::-webkit-outer-spin-button {
     -webkit-appearance: none;
@@ -528,18 +752,5 @@
   input[type="number"] {
     -moz-appearance: textfield;
     appearance: none;
-  }
-  h1 {
-    text-align: center;
-  }
-  a {
-    float: inline-end;
-  }
-  output {
-    width: 100%;
-  }
-  textarea {
-    width: 215px;
-    height: 125px;
   }
 </style>
