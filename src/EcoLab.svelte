@@ -45,7 +45,7 @@
   {#if mounted}
     <!-- 헤더 섹션 -->
     <section class="hero" transition:fade={{ duration: 300 }}>
-      <h1 class="hero-title">생태계 실험실: Eco-dynamics lab</h1>
+      <h1 class="hero-title">생태계 실험실에 오신 것을 환영합니다.</h1>
       <p class="hero-subtitle">
         포식자-피식자 상호작용을 직접 시뮬레이션하고 관찰해보세요.
       </p>
@@ -53,7 +53,7 @@
         <a href="/EcoSimulator" class="btn btn-primary" use:link
           >시뮬레이터 시작하기</a
         >
-        <a href="/LabBoard" class="btn btn-secondary" use:link>정원 보러가기</a>
+        <a href="/EcoGarden" class="btn btn-secondary" use:link>정원 보러가기</a>
       </div>
     </section>
 
@@ -142,8 +142,8 @@
           </p>
           <p class="contact-email">
             <strong>이메일:</strong>
-            <a href="mailto:example@example.com" class="link">
-              example@example.com
+            <a href="mailto:denaltema@gmail.com" class="link">
+              denaltema@gmail.com
             </a>
           </p>
           <p class="contact-text">
@@ -166,7 +166,7 @@
         <p class="footer-text">© 2024 EcoDynamicsLab</p>
         <nav class="footer-nav">
           <a href="/EcoSimulator" class="footer-link" use:link>시뮬레이터</a> |
-          <a href="/LabBoard" class="footer-link" use:link>실험 목록</a> |
+          <a href="/EcoGarden" class="footer-link" use:link>실험 목록</a> |
           <a
             href="https://github.com/CONG878/EcoDynamicsLab"
             class="footer-link"
@@ -443,7 +443,7 @@
       gap: 1.5rem;
     }
   }
-  
+
   /* 애니메이션 효과 추가 */
   .feature-item,
   .benefit-item {

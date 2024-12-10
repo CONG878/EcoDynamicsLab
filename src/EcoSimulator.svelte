@@ -1,15 +1,15 @@
 <script>
+  /* 스벨트와 외부 라이브러리 및 모듈 */
   import { onMount } from "svelte";
   import { doc, getDoc, runTransaction, setDoc } from "firebase/firestore";
   import Chart from "chart.js/auto";
   import { db } from "./firebase.js";
   import { link, push } from "svelte-spa-router";
 
+  /* 초기 변수 및 상태 */
   export let params = {};
   const id = params.id ?? null; // URL에서 전달받은 실험 ID
 
-  /* 변수 선언 */
-  // 초기 상태 정의
   let state = {
     names: { prey: "토끼", LP: "여우", AP: "늑대" },
     stepSize: 0.23,
@@ -27,42 +27,32 @@
     },
   };
 
-  // 초기 개체 밀도
   let populations = {
     prey: 1000.0,
     LP: 25.0,
     AP: 10.0,
   };
 
-  // 메타데이터
   let experimentMetadata = {
     title: "",
     description: "",
   };
 
-  let experimentTitle = "생태계를 창조해 주세요."; // 기존 실험 제목 or 환영 멘트
-  let ecosystemChart; // 차트 선언
-
+  let experimentTitle = "생태계를 창조해 주세요.";
+  let ecosystemChart;
   let initialState;
   let initialPopulations;
   let initialExperimentMetadata;
-  /* 변수 선언 종료 */
-
-  /* 변수 업데이트 */
   let dataLoaded = false;
-  // 실험 데이터 불러오기 함수
+
+  /* 데이터 로드 및 초기화 */
   async function loadExperimentData(documentId) {
     if (documentId) {
-      // 문서 참조 생성
       const docRef = doc(db, "ecoSimulations", documentId);
-
-      // 문서 데이터 가져오기
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
         const data = docSnap.data();
-
-        // Firestore 데이터를 변수에 저장
         state = data.state;
         populations = data.populations;
         experimentMetadata = data.experimentMetadata;
@@ -70,28 +60,19 @@
       }
     }
 
-    // 초기 상태를 현재의 값으로 설정
     initialState = JSON.parse(JSON.stringify(state));
     initialPopulations = JSON.parse(JSON.stringify(populations));
-    initialExperimentMetadata = JSON.parse(JSON.stringify(experimentMetadata));
+    initialExperimentMetadata = JSON.parse(
+      JSON.stringify(experimentMetadata)
+    );
 
-    dataLoaded = true; // 데이터 로드 완료 표시
+    dataLoaded = true;
   }
   loadExperimentData(id);
 
-  // 생물 이름 업데이트
-  $: if (ecosystemChart && ecosystemChart.data) {
-    ecosystemChart.data.datasets[0].label = state.names.prey;
-    ecosystemChart.data.datasets[1].label = state.names.LP;
-    ecosystemChart.data.datasets[2].label = state.names.AP;
-    ecosystemChart.update();
-  }
-  /* 변수 업데이트 종료 */
-
-  /* 차트 초기화 */
+  /* 차트 관련 함수 */
   function initializeChart() {
     const ctx = document.getElementById("ecosystemChart").getContext("2d");
-
     ecosystemChart = new Chart(ctx, {
       type: "line",
       data: {
@@ -147,13 +128,18 @@
     });
   }
 
+  $: if (ecosystemChart && ecosystemChart.data) {
+    ecosystemChart.data.datasets[0].label = state.names.prey;
+    ecosystemChart.data.datasets[1].label = state.names.LP;
+    ecosystemChart.data.datasets[2].label = state.names.AP;
+    ecosystemChart.update();
+  }
+
   onMount(() => {
     initializeChart();
   });
-  /* 차트 초기화 종료 */
 
-  /* 부가 기능 */
-  // 리셋 이벤트
+  /* 기능적 유틸리티 */
   function resetForm() {
     state = JSON.parse(JSON.stringify(initialState));
     populations = JSON.parse(JSON.stringify(initialPopulations));
@@ -161,14 +147,11 @@
     ecosystemChart.update();
   }
 
-  // 로그-가우시안 난수를 생성하는 함수
   function logGaussianRandom(mean = 0, stdDev = Math.log(1.25)) {
     let u1 = Math.random();
-    while (u1 === 0) u1 = Math.random(); // [0,1) -> (0,1)
+    while (u1 === 0) u1 = Math.random();
     const u2 = Math.random();
     const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
-
-    // 로그-가우시안 변환
     return mean * Math.exp(stdDev * z0);
   }
 
@@ -201,15 +184,13 @@
         logGaussianRandom(food, Math.log(1.25))
       );
 
-    const keys = Object.keys(state.aggressionRateMatrix); // 모든 행의 키 가져오기
-    keys.forEach((key) => {
+    Object.keys(state.aggressionRateMatrix).forEach((key) => {
       state.aggressionRateMatrix[key] = state.aggressionRateMatrix[key].map(
         (rate) => logGaussianRandom(rate, Math.log(1.25))
       );
     });
   }
 
-  // 체크박스 이벤트 리스너
   let yGridVisible = true;
   let y1GridVisible = false;
 
@@ -219,17 +200,14 @@
     ecosystemChart.update();
   }
 
-  // 관측 단위 기간 지정
   let xTicks = 3.0;
   function ticksSize() {
     ecosystemChart.options.scales.x.ticks.stepSize = xTicks;
     ecosystemChart.update();
   }
-  /* 부가 기능 종료 */
 
-  /* 시뮬레이션 요청 및 차트 업데이트 */
-  // 차트 데이터 업데이트
-  function updateChart(simulationResults) {
+  /* 시뮬레이션 및 데이터 저장 */
+  async function updateChart(simulationResults) {
     ecosystemChart.data.labels = simulationResults.map((result) =>
       result.time.toFixed(2)
     );
@@ -245,16 +223,16 @@
     ecosystemChart.update();
   }
 
-  // 시뮬레이션 요청
   async function simulate() {
-    const populationsArray = Object.values(populations); // 객체를 배열로 변환
-
     const response = await fetch(
       "https://simulateecosystem-6ctqr234bq-du.a.run.app/simulateEcosystem",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ state, populations: populationsArray }),
+        body: JSON.stringify({
+          state,
+          populations: Object.values(populations),
+        }),
       }
     );
 
@@ -265,35 +243,32 @@
       console.error("Simulation failed:", await response.text());
     }
   }
-  /* 시뮬레이션 요청 및 차트 업데이트 종료 */
 
-  /* 매개변수 제출 요청 */
-  // 자동 증가 ID 생성 함수
   async function getNextID() {
-    const counterRef = doc(db, "counters", "ecoSimCounter"); // 카운터 문서 참조
+    const counterRef = doc(db, "counters", "ecoSimCounter");
 
     const newSimulationID = await runTransaction(db, async (transaction) => {
       const counterDoc = await transaction.get(counterRef);
 
       if (!counterDoc.exists()) {
-        transaction.set(counterRef, { count: 1 }); // 초기화
-        return 1; // 첫 번째 ID
+        transaction.set(counterRef, { count: 1 });
+        return 1;
       }
       const currentCount = counterDoc.data().count;
       const nextCount = currentCount + 1;
-      transaction.update(counterRef, { count: nextCount }); // 증가
+      transaction.update(counterRef, { count: nextCount });
       return nextCount;
     });
 
-    return `ecoSim${newSimulationID}`; // 접두사를 추가하여 ID 생성
+    return `ecoSim${newSimulationID}`;
   }
 
   async function handleFormSubmit(event) {
-    event.preventDefault(); // 기본 동작 방지
+    event.preventDefault();
 
     try {
-      const newID = await getNextID(); // 새로운 ID 생성
-      const docRef = doc(db, "ecoSimulations", newID); // 문자열 ID 사용
+      const newID = await getNextID();
+      const docRef = doc(db, "ecoSimulations", newID);
 
       await setDoc(docRef, {
         state,
@@ -303,22 +278,24 @@
       });
 
       alert("Experiment saved successfully!");
-      push("/LabBoard");
+      push("/EcoGarden");
     } catch (error) {
       console.error("Error saving experiment:", error);
       alert("Error saving experiment. Please try again.");
     }
   }
-  /* 매개변수 제출 요청 종료 */
 </script>
 
 <svelte:head>
   <title>Eco Simulator</title>
 </svelte:head>
 
-<h1>생태계 시뮬레이터</h1>
+<header>
+  <a href="/" use:link class="home">대문으로</a>
+  <h1>생태계 시뮬레이터</h1>
+</header>
 <h2>{experimentTitle}</h2>
-<section class="simulator-container">
+<main class="simulator-container">
   {#if dataLoaded}
     <form
       on:reset|preventDefault={resetForm}
@@ -367,8 +344,8 @@
           <input id="T" type="number" step="any" bind:value={state.duration} />
         </fieldset>
 
-        <!-- 실험 메타데이터 -->
-        <fieldset class="metadata">
+        <fieldset>
+          <legend>실험 설정</legend>
           <div class="buttons">
             <button type="reset" class="btn-secondary">초기화</button>
             <button type="button" on:click={randomize} class="btn-secondary"
@@ -378,14 +355,16 @@
               >Simulate</button
             >
           </div>
-          <a href="/LabBoard" use:link>다른 환경 보러 가기</a>
-
+          <br />
           <label for="title">실험 제목</label>
           <input id="title" bind:value={experimentMetadata.title} type="text" />
           <label for="description">실험 설명</label>
           <textarea id="description" bind:value={experimentMetadata.description}
           ></textarea>
-          <button type="submit" class="btn-primary">등록</button>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">등록</button>
+            <a href="/EcoGarden" use:link>다른 환경 보러 가기</a>
+          </div>
         </fieldset>
       </section>
 
@@ -570,51 +549,72 @@
       </div>
     </section>
   </output>
-</section>
+</main>
 
 <style>
+  /* 공통 헤더 스타일 */
+  header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    margin-bottom: 0.5rem;
+  }
+  .home {
+    position: absolute;
+    left: 1.5rem;
+    font-size: 1.25rem;
+  }
+  .home:hover {
+    text-decoration: underline;
+  }
   h1 {
     font-size: 2.5rem;
     color: var(--color-primary-dark);
-    margin-bottom: 0.5rem;
   }
-
   h2 {
     font-size: 1.5rem;
     color: var(--color-text-light);
-    margin-bottom: 2rem;
+    text-align: center;
   }
 
+  /* 컨테이너 레이아웃 */
   .simulator-container {
     display: flex;
     flex-direction: column;
     gap: 2rem;
   }
-
   form {
     display: flex;
     gap: 2rem;
     flex-direction: column;
   }
 
+  /* 필드셋 및 폼 요소 스타일 */
   fieldset {
     background-color: var(--color-background-alt);
     padding: 1.5rem;
     border-radius: 0.5rem;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
-
+  fieldset fieldset {
+    display: flex;
+    gap: 0.4rem;
+  }
+  fieldset fieldset.A {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-gap: 0.4rem;
+  }
   legend {
     font-size: 1.25rem;
     color: var(--color-primary);
     margin-bottom: 1rem;
   }
-
   label {
     font-weight: 600;
     margin-bottom: 0.25rem;
   }
-
   input,
   textarea {
     padding: 0.5rem;
@@ -622,7 +622,16 @@
     border-radius: 0.25rem;
     font-size: 1rem;
   }
+  input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: none;
+  }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+  }
 
+  /* 버튼 스타일 */
   button {
     padding: 0.5rem 1rem;
     border-radius: 0.25rem;
@@ -631,126 +640,117 @@
     text-decoration: none;
     transition: background-color 0.2s ease-in-out;
   }
-
   .btn-primary {
     background-color: var(--color-primary);
     color: white;
   }
-
   .btn-primary:hover {
     background-color: var(--color-primary-dark);
   }
-
   .btn-secondary {
     background-color: var(--color-background);
     color: var(--color-primary);
     border: 1px solid var(--color-primary);
   }
-
   .btn-secondary:hover {
     background-color: var(--color-secondary);
   }
 
+  /* 링크 스타일 */
   a {
     color: var(--color-primary);
   }
-
   a:hover {
     text-decoration: underline;
   }
 
+  /* 세부 레이아웃 */
+  .form-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
   .buttons {
     display: flex;
     justify-content: space-between;
     width: 303px;
   }
-
   .basic-info {
     height: auto;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
   }
-
   #title,
   #description {
-    width: 100%;
+    width: 303px;
   }
-
-  button[type="submit"] {
-    display: block;
-  }
-
-  fieldset fieldset {
-    display: flex;
-    gap: 0.4rem;
-  }
-
-  fieldset fieldset.A {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    grid-gap: 0.4rem;
-  }
-
   .predator input {
     width: 100%;
   }
 
+  /* 출력 섹션 및 차트 */
   output {
     background-color: white;
     padding: 1.5rem;
     border-radius: 0.5rem;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    flex-grow: 1;
+    flex-shrink: 1;
+  }
+  canvas {
     width: 100%;
   }
-
   .chart-controlls {
     display: flex;
     justify-content: space-around;
     align-items: center;
     margin-top: 1rem;
   }
-
   .grid-mode {
     display: flex;
     gap: 1rem;
     align-items: center;
   }
 
+  /* 로딩 메시지 */
   .loading {
     text-align: center;
     font-size: 1.25rem;
     color: var(--color-text-light);
   }
 
-  /* Responsive styles */
+  /* 반응형 스타일 */
   @media (min-width: 640px) {
     form {
       flex-direction: row;
+      justify-content: center;
     }
   }
-
   @media (min-width: 768px) {
     h1 {
       font-size: 3rem;
     }
-
     h2 {
       font-size: 1.75rem;
     }
-
     fieldset {
       padding: 2rem;
     }
   }
-
-  /* Remove default number input styling */
-  input[type="number"]::-webkit-inner-spin-button,
-  input[type="number"]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-  }
-  input[type="number"] {
-    -moz-appearance: textfield;
-    appearance: none;
+  @media (min-width: 1600px) {
+    .simulator-container {
+      flex-direction: row;
+    }
+    output {
+      width: calc(100% - 854px);
+      height: fit-content;
+      position: sticky;
+      top: 0;
+      padding: 1rem;
+    }
+    #ticks {
+      width: 87px;
+    }
   }
 </style>

@@ -1,8 +1,27 @@
-# 생태계 실험실: Eco-dynamics Lab
+# [생태계 실험실: Eco-dynamics Lab](https://ecodynamicslab.web.app)
 
 ## 소개
 
 **생태계 실험실**은 미분 방정식을 활용하여 포식자-피식자 간의 상호작용을 모델링하는 웹 애플리케이션입니다. 사용자 친화적인 인터페이스를 통해 초기 조건과 매개변수를 조정하여 생물 종의 개체수 변화를 시뮬레이션하고 관찰할 수 있습니다.
+
+## 사용 방법
+
+1. [생태계 실험실](https://ecodynamicslab.web.app)에 접속합니다.
+2. [시뮬레이터 시작하기](https://ecodynamicslab.web.app/#/EcoSimulator)를 누릅니다.
+3. 각 생물 종의 초기 조건과 매개변수를 입력합니다.
+4. 시뮬레이션을 실행하여 결과를 확인합니다.
+5. 실험 결과를 저장하여 공유할 수 있습니다.
+6. [생태계 정원](https://ecodynamicslab.web.app/#/EcoGarden)에서 공유된 결과를 볼 수 있습니다.
+7. 기존 실험 결과에서 매개변수를 수정하여 또다른 환경을 저장할 수 있습니다.
+
+## 기술 스택
+
+- **프론트엔드 프레임워크**: [Svelte](https://svelte.dev/)
+- **차트 라이브러리**: [Chart.js](https://www.chartjs.org/)
+- **백엔드 및 데이터베이스**: [Firebase](https://firebase.google.com/)
+  - **Firestore**: 매개변수 및 실험 데이터 저장
+  - **Functions**: 미분 방정식 계산 처리
+  - **Hosting**: 애플리케이션 배포
 
 ## 프로젝트 배경
 
@@ -24,22 +43,6 @@
 
 - **비전문 사용자**: 생태계의 동적 변화를 쉽게 관찰하고 조작하여 자연에 대한 흥미와 이해도를 높일 수 있습니다.
 - **전문 사용자**: 다양한 조건을 시뮬레이션하여 생태계 연구에 필요한 데이터를 수집하고 분석할 수 있습니다.
-
-## 사용 방법
-
-1. [EcoSimulator](https://ecodynamicslab.web.app/#/EcoSimulator)에 접속합니다.
-2. 각 생물 종의 초기 조건과 매개변수를 입력합니다.
-3. 시뮬레이션을 실행하여 결과를 확인합니다.
-4. 원하는 경우 실험 결과를 저장하여 공유할 수 있습니다.
-
-## 기술 스택
-
-- **프론트엔드 프레임워크**: [Svelte](https://svelte.dev/)
-- **차트 라이브러리**: [Chart.js](https://www.chartjs.org/)
-- **백엔드 및 데이터베이스**: [Firebase](https://firebase.google.com/)
-  - **Firestore**: 매개변수 및 실험 데이터 저장
-  - **Functions**: 미분 방정식 계산 처리
-  - **Hosting**: 애플리케이션 배포
 
 ## 확장 가능 서비스
 
