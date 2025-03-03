@@ -45,6 +45,23 @@
   let initialExperimentMetadata;
   let dataLoaded = false;
 
+  // 변수 설명을 위한 툴팁 정보
+  const tooltips = {
+    reproductionRate:
+      "개체가 번식하는 비율입니다. 높을수록 개체밀도가 빠르게 증가합니다.",
+    carryingCapacity: "환경이 지원할 수 있는 최대 개체밀도입니다.",
+    predationRate:
+      "포식자가 피식자를 사냥하는 효율성입니다. 높을수록 더 많은 피식자를 사냥합니다.",
+    efficiency: "포식자가 피식자로부터 얻는 에너지 효율입니다.",
+    alternativeFood:
+      "피식자 외에 포식자가 이용할 수 있는 식량 자원의 양입니다. 예) 다른 동물, 열매, 인간 주변의 음식물 등",
+    aggressionRate:
+      "포식자 간의 경쟁을 나타냅니다. 늑대 → 여우는 늑대가 여우를 공격하는 수준을 뜻합니다.",
+  };
+
+  // 툴팁 표시 상태
+  let showTooltips = false;
+
   /* 데이터 로드 및 초기화 */
   async function loadExperimentData(documentId) {
     if (documentId) {
@@ -62,9 +79,7 @@
 
     initialState = JSON.parse(JSON.stringify(state));
     initialPopulations = JSON.parse(JSON.stringify(populations));
-    initialExperimentMetadata = JSON.parse(
-      JSON.stringify(experimentMetadata)
-    );
+    initialExperimentMetadata = JSON.parse(JSON.stringify(experimentMetadata));
 
     dataLoaded = true;
   }
@@ -113,12 +128,12 @@
             ticks: { stepSize: 3 },
           },
           y: {
-            title: { display: true, text: "피식자 개체수" },
+            title: { display: true, text: "피식자 개체밀도" },
             beginAtZero: true,
             position: "left",
           },
           y1: {
-            title: { display: true, text: "포식자 개체수" },
+            title: { display: true, text: "포식자 개체밀도" },
             beginAtZero: true,
             position: "right",
             grid: { display: false },
@@ -231,13 +246,14 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           state,
-          populations: Object.values(populations),
+          populations: [populations.prey, populations.LP, populations.AP],
         }),
       }
     );
 
     if (response.ok) {
       const results = await response.json();
+      console.log(populations);
       updateChart(results);
     } else {
       console.error("Simulation failed:", await response.text());
@@ -284,6 +300,14 @@
       alert("Error saving experiment. Please try again.");
     }
   }
+
+  // 툴팁 토글 함수
+  function toggleTooltips() {
+    showTooltips = !showTooltips;
+  }
+
+  // 고급 설정 열림/닫힘 상태를 추적하는 변수 추가
+  let isAdvancedSettingsOpen = false;
 </script>
 
 <svelte:head>
@@ -295,6 +319,18 @@
   <h1>생태계 시뮬레이터</h1>
 </header>
 <h2>{experimentTitle}</h2>
+
+<!-- 초보자 가이드 -->
+<div class="guide-container">
+  <p class="guide">
+    본 페이지를 처음 들어온 사용자는 초기값이 설정된 상태로 Simulate를
+    작동해보세요.
+  </p>
+  <button class="btn-secondary info-button" on:click={toggleTooltips}>
+    {showTooltips ? "용어 설명 숨기기" : "용어 설명 보기"}
+  </button>
+</div>
+
 <main class="simulator-container">
   {#if dataLoaded}
     <form
@@ -371,148 +407,185 @@
       <section class="traits">
         <fieldset>
           <legend>피식자 특성</legend>
-          <label for="r0">번식률</label>
-          <input
-            id="r0"
-            bind:value={state.preyTraits.reproductionRate}
-            type="number"
-            step="any"
-          />
-          <label for="K0">포화 개체수</label>
-          <input
-            id="K0"
-            bind:value={state.preyTraits.carryingCapacity}
-            type="number"
-            step="any"
-          />
+          <div class="trait-row">
+            <label for="r0">번식률</label>
+            {#if showTooltips}
+              <div class="tooltip">{tooltips.reproductionRate}</div>
+            {/if}
+            <input
+              id="r0"
+              bind:value={state.preyTraits.reproductionRate}
+              type="number"
+              step="any"
+            />
+          </div>
+          <div class="trait-row">
+            <label for="K0">포화 개체수</label>
+            {#if showTooltips}
+              <div class="tooltip">{tooltips.carryingCapacity}</div>
+            {/if}
+            <input
+              id="K0"
+              bind:value={state.preyTraits.carryingCapacity}
+              type="number"
+              step="any"
+            />
+          </div>
         </fieldset>
 
-        <fieldset class="predator">
-          <legend>포식자 특성</legend>
-          <fieldset class="r">
-            <legend>번식률</legend>
-            <div class="input-group">
-              <label for="r1">{state.names.LP}</label>
-              <input
-                id="r1"
-                bind:value={state.predatorTraits.reproductionRate[0]}
-                type="number"
-                step="any"
-              />
-            </div>
-            <div class="input-group">
-              <label for="r2">{state.names.AP}</label>
-              <input
-                id="r2"
-                bind:value={state.predatorTraits.reproductionRate[1]}
-                type="number"
-                step="any"
-              />
-            </div>
+        <details class="advanced-settings" bind:open={isAdvancedSettingsOpen}>
+          <summary class="summary-button">고급 설정</summary>
+
+          <fieldset class="predator">
+            <legend>포식자 특성</legend>
+            <fieldset class="r">
+              <legend>번식률</legend>
+              {#if showTooltips}
+                <div class="tooltip">{tooltips.reproductionRate}</div>
+              {/if}
+              <div class="input-group">
+                <label for="r1">{state.names.LP}</label>
+                <input
+                  id="r1"
+                  bind:value={state.predatorTraits.reproductionRate[0]}
+                  type="number"
+                  step="any"
+                />
+              </div>
+              <div class="input-group">
+                <label for="r2">{state.names.AP}</label>
+                <input
+                  id="r2"
+                  bind:value={state.predatorTraits.reproductionRate[1]}
+                  type="number"
+                  step="any"
+                />
+              </div>
+            </fieldset>
+            <fieldset class="a">
+              <legend>포식 강도</legend>
+              {#if showTooltips}
+                <div class="tooltip">{tooltips.predationRate}</div>
+              {/if}
+              <div class="input-group">
+                <label for="a1">{state.names.LP}</label>
+                <input
+                  id="a1"
+                  bind:value={state.predatorTraits.predationRate[0]}
+                  type="number"
+                  step="any"
+                />
+              </div>
+              <div class="input-group">
+                <label for="a2">{state.names.AP}</label>
+                <input
+                  id="a2"
+                  bind:value={state.predatorTraits.predationRate[1]}
+                  type="number"
+                  step="any"
+                />
+              </div>
+            </fieldset>
+            <fieldset class="b">
+              <legend>포식 효율</legend>
+              {#if showTooltips}
+                <div class="tooltip">{tooltips.efficiency}</div>
+              {/if}
+              <div class="input-group">
+                <label for="b1">{state.names.LP}</label>
+                <input
+                  id="b1"
+                  bind:value={state.predatorTraits.efficiency[0]}
+                  type="number"
+                  step="any"
+                />
+              </div>
+              <div class="input-group">
+                <label for="b2">{state.names.AP}</label>
+                <input
+                  id="b2"
+                  bind:value={state.predatorTraits.efficiency[1]}
+                  type="number"
+                  step="any"
+                />
+              </div>
+            </fieldset>
+            <fieldset class="c">
+              <legend>대체 식량 자원</legend>
+              {#if showTooltips}
+                <div class="tooltip">{tooltips.alternativeFood}</div>
+              {/if}
+              <div class="input-group">
+                <label for="c1">{state.names.LP}</label>
+                <input
+                  id="c1"
+                  bind:value={state.predatorTraits.alternativeFood[0]}
+                  type="number"
+                  step="any"
+                />
+              </div>
+              <div class="input-group">
+                <label for="c2">{state.names.AP}</label>
+                <input
+                  id="c2"
+                  bind:value={state.predatorTraits.alternativeFood[1]}
+                  type="number"
+                  step="any"
+                />
+              </div>
+            </fieldset>
+            <fieldset class="A">
+              <legend>포식자 간 공격성</legend>
+              {#if showTooltips}
+                <div class="tooltip">{tooltips.aggressionRate}</div>
+              {/if}
+              <div class="input-group">
+                <label for="a11">{state.names.LP} → {state.names.LP}</label>
+                <input
+                  id="a11"
+                  bind:value={state.aggressionRateMatrix["0"][0]}
+                  type="number"
+                  step="any"
+                />
+              </div>
+              <div class="input-group">
+                <label for="a12">{state.names.LP} → {state.names.AP}</label>
+                <input
+                  id="a12"
+                  bind:value={state.aggressionRateMatrix["0"][1]}
+                  type="number"
+                  step="any"
+                />
+              </div>
+              <div class="input-group">
+                <label for="a21">{state.names.AP} → {state.names.LP}</label>
+                <input
+                  id="a21"
+                  bind:value={state.aggressionRateMatrix["1"][0]}
+                  type="number"
+                  step="any"
+                />
+              </div>
+              <div class="input-group">
+                <label for="a22">{state.names.AP} → {state.names.AP}</label>
+                <input
+                  id="a22"
+                  bind:value={state.aggressionRateMatrix["1"][1]}
+                  type="number"
+                  step="any"
+                />
+              </div>
+            </fieldset>
           </fieldset>
-          <fieldset class="a">
-            <legend>포식 강도</legend>
-            <div class="input-group">
-              <label for="a1">{state.names.LP}</label>
-              <input
-                id="a1"
-                bind:value={state.predatorTraits.predationRate[0]}
-                type="number"
-                step="any"
-              />
-            </div>
-            <div class="input-group">
-              <label for="a2">{state.names.AP}</label>
-              <input
-                id="a2"
-                bind:value={state.predatorTraits.predationRate[1]}
-                type="number"
-                step="any"
-              />
-            </div>
-          </fieldset>
-          <fieldset class="b">
-            <legend>포식 효율</legend>
-            <div class="input-group">
-              <label for="b1">{state.names.LP}</label>
-              <input
-                id="b1"
-                bind:value={state.predatorTraits.efficiency[0]}
-                type="number"
-                step="any"
-              />
-            </div>
-            <div class="input-group">
-              <label for="b2">{state.names.AP}</label>
-              <input
-                id="b2"
-                bind:value={state.predatorTraits.efficiency[1]}
-                type="number"
-                step="any"
-              />
-            </div>
-          </fieldset>
-          <fieldset class="c">
-            <legend>대체 식량 자원</legend>
-            <div class="input-group">
-              <label for="c1">{state.names.LP}</label>
-              <input
-                id="c1"
-                bind:value={state.predatorTraits.alternativeFood[0]}
-                type="number"
-                step="any"
-              />
-            </div>
-            <div class="input-group">
-              <label for="c2">{state.names.AP}</label>
-              <input
-                id="c2"
-                bind:value={state.predatorTraits.alternativeFood[1]}
-                type="number"
-                step="any"
-              />
-            </div>
-          </fieldset>
-          <fieldset class="A">
-            <legend>포식자 간 공격성</legend>
-            <div class="input-group">
-              <label for="a11">{state.names.LP} → {state.names.LP}</label>
-              <input
-                id="a11"
-                bind:value={state.aggressionRateMatrix["0"][0]}
-                type="number"
-                step="any"
-              />
-            </div>
-            <div class="input-group">
-              <label for="a12">{state.names.LP} → {state.names.AP}</label>
-              <input
-                id="a12"
-                bind:value={state.aggressionRateMatrix["0"][1]}
-                type="number"
-                step="any"
-              />
-            </div>
-            <div class="input-group">
-              <label for="a21">{state.names.AP} → {state.names.LP}</label>
-              <input
-                id="a21"
-                bind:value={state.aggressionRateMatrix["1"][0]}
-                type="number"
-                step="any"
-              />
-            </div>
-            <div class="input-group">
-              <label for="a22">{state.names.AP} → {state.names.AP}</label>
-              <input
-                id="a22"
-                bind:value={state.aggressionRateMatrix["1"][1]}
-                type="number"
-                step="any"
-              />
-            </div>
-          </fieldset>
-        </fieldset>
+
+          <button
+            type="button"
+            class="summary-button hide-button"
+            on:click={() => (isAdvancedSettingsOpen = false)}
+          >
+            고급 설정
+          </button>
+        </details>
       </section>
     </form>
   {:else}
@@ -578,6 +651,27 @@
     text-align: center;
   }
 
+  /* 초보자 가이드 스타일 */
+  .guide-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--color-secondary);
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    margin: 1rem auto;
+    max-width: 1200px;
+  }
+  .guide {
+    margin: 0;
+    color: var(--color-primary-dark);
+    font-weight: 500;
+  }
+  .info-button {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
   /* 컨테이너 레이아웃 */
   .simulator-container {
     display: flex;
@@ -599,7 +693,9 @@
   }
   fieldset fieldset {
     display: flex;
+    flex-direction: column;
     gap: 0.4rem;
+    position: relative;
   }
   fieldset fieldset.A {
     display: grid;
@@ -656,6 +752,43 @@
     background-color: var(--color-secondary);
   }
 
+  /* 고급 설정 details/summary 스타일 */
+  .advanced-settings {
+    width: 100%;
+    margin: 1rem 0;
+  }
+
+  .summary-button {
+    width: 100%;
+    padding: 0.5rem 1rem;
+    background-color: var(--color-secondary);
+    color: var(--color-primary-dark);
+    border: 1px solid var(--color-primary);
+    border-radius: 0.25rem;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+    list-style: none;
+  }
+
+  .summary-button:hover {
+    background-color: var(--color-background);
+  }
+
+  .summary-button::-webkit-details-marker {
+    display: none;
+  }
+
+  /* details가 열렸을 때 summary 스타일 변경 */
+  details[open] .summary-button::after {
+    content: " 숨기기 ▲";
+  }
+
+  details:not([open]) .summary-button::after {
+    content: " 보기 ▼";
+  }
+
   /* 링크 스타일 */
   a {
     color: var(--color-primary);
@@ -679,7 +812,8 @@
     height: auto;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-start;
+    gap: 1rem;
   }
   #title,
   #description {
@@ -687,6 +821,21 @@
   }
   .predator input {
     width: 100%;
+  }
+
+  /* 툴팁 스타일 */
+  .trait-row {
+    position: relative;
+    margin-bottom: 0.5rem;
+  }
+  .tooltip {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+    margin: 0.25rem 0;
+    font-size: 0.875rem;
+    color: #495057;
   }
 
   /* 출력 섹션 및 차트 */
@@ -726,6 +875,13 @@
       flex-direction: row;
       justify-content: center;
     }
+    .guide-container {
+      flex-direction: row;
+    }
+    /* 기본 설정 영역의 높이를 고정하지 않음 */
+    .basic-info {
+      align-self: flex-start;
+    }
   }
   @media (min-width: 768px) {
     h1 {
@@ -752,5 +908,88 @@
     #ticks {
       width: 87px;
     }
+  }
+
+  fieldset fieldset {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    position: relative;
+  }
+
+  .input-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+
+  .tooltip {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    color: #495057;
+    width: 100%;
+    box-sizing: border-box;
+    word-wrap: break-word;
+  }
+
+  .predator input {
+    width: 50%;
+  }
+
+  @media (min-width: 640px) {
+    fieldset fieldset {
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+
+    .tooltip {
+      flex-basis: 100%;
+    }
+
+    .input-group {
+      flex-basis: calc(50% - 0.2rem);
+    }
+  }
+
+  /* 포식자 간 공격성 필드셋 스타일 수정 */
+  fieldset.A {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-gap: 0.4rem;
+  }
+
+  fieldset.A .tooltip {
+    grid-column: 1 / -1; /* 툴팁이 전체 너비를 차지하도록 설정 */
+    margin-bottom: 0.5rem;
+  }
+
+  fieldset.A .input-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  fieldset.A label {
+    margin-bottom: 0.25rem;
+  }
+
+  fieldset.A input {
+    width: 100%;
+  }
+
+  @media (max-width: 639px) {
+    fieldset.A {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* 닫기 버튼 스타일 */
+  .hide-button {
+    margin-top: 1rem;
   }
 </style>
